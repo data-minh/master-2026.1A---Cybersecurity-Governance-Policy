@@ -1,0 +1,35 @@
+flowchart TB
+  U[Người dùng - Trình duyệt]
+  subgraph PLAT[Platform]
+    GW[gateway :8000]
+    DASH[dashboard BFF+UI :8080]
+    AUTH[scope-auth :8001]
+    ORCH[orchestrator :8002]
+    VF[verification :8023<br/>API phê duyệt + worker]
+  end
+  subgraph WK[Worker Recon và Scan]
+    R1[recon-subdomain]
+    R2[recon-httpprobe]
+    R3[recon-portfuzz]
+    S1[scan-engine]
+    S2[scan-specialized]
+  end
+  REDIS[(Redis 7 - AOF<br/>Streams, Hash, Set, ZSet)]
+  SQL[(SQLite - lịch sử kiểm tra<br/>volume vts-history-data)]
+  T[vuln-target<br/>chỉ demo]
+
+  U -->|cookie HttpOnly + CSRF| DASH
+  U -.->|JWT| GW
+  GW -.->|proxy tới các service Platform| DASH
+  DASH --> ORCH
+  DASH --> AUTH
+  DASH --> VF
+  ORCH <-->|ledger, lệnh, bus| REDIS
+  ORCH -->|lưu mọi phiên đã kết thúc| SQL
+  WK <-->|nhận lệnh, kết quả| REDIS
+  VF <-->|nhận lệnh, approval| REDIS
+  WK -->|GET /scope/check| AUTH
+  VF -->|GET /scope/check| AUTH
+  ORCH -->|scope/check khi tạo scan| AUTH
+  WK -->|HTTP kiểm scope từng hop| T
+  VF -->|GET an toàn| T

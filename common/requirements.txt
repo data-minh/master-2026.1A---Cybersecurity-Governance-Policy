@@ -1,0 +1,8 @@
+# Pinned lower+upper bounds for reproducible builds (Redis Streams needs redis>=5).
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29,<1.0
+redis>=5.0,<9.0
+httpx>=0.27,<1.0
+pyjwt>=2.8,<3.0
+pydantic>=2.6,<3.0
+pyyaml>=6.0,<7.0

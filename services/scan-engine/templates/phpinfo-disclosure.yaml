@@ -1,0 +1,23 @@
+id: phpinfo-disclosure
+info:
+  name: phpinfo() Information Disclosure
+  severity: medium
+  description: Detects an exposed phpinfo page revealing server configuration.
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/phpinfo.php"
+      - "{{BaseURL}}/info.php"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: word
+        part: body
+        words: ["PHP Version", "phpinfo()"]
+        condition: or
+    extractors:
+      - type: regex
+        part: body
+        regex: ["PHP Version ([0-9.]+)"]
+        group: 1

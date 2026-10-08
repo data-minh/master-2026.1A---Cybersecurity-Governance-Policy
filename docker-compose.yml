@@ -1,0 +1,169 @@
+# Vulnerability Testing System (Đề 7) - full stack.
+# Event bus = Redis; 8 FastAPI microservices across 3 roles.
+# Each service is built with the repo root as context so it can embed the
+# shared common/ library. Host ports bind to VTS_BIND_ADDRESS (default
+# 127.0.0.1) so backends and Redis are not reachable from other machines.
+
+name: vts
+
+x-common-env: &common-env
+  REDIS_URL: redis://redis:6379/0
+  JWT_SECRET: ${JWT_SECRET:-change-me-in-prod-vts-secret}
+  SCOPE_SERVICE_URL: http://scope-auth:8000
+  ORCHESTRATOR_URL: http://orchestrator:8000
+  DASHBOARD_URL: http://dashboard:8000
+  DRY_RUN: "true"
+  RECON_EXTERNAL_SOURCES_ENABLED: ${RECON_EXTERNAL_SOURCES_ENABLED:-true}
+  MAX_CONCURRENCY: "20"
+  TOP_PORTS: "100"
+  SCAN_MAX_PARALLEL: "4"
+  WORK_BOOTSTRAP_TIMEOUT_SECONDS: ${WORK_BOOTSTRAP_TIMEOUT_SECONDS:-90}
+  WORK_HTTP_PROBE_TIMEOUT_SECONDS: ${WORK_HTTP_PROBE_TIMEOUT_SECONDS:-60}
+  WORK_PORT_TIMEOUT_SECONDS: ${WORK_PORT_TIMEOUT_SECONDS:-30}
+  WORK_FUZZ_TIMEOUT_SECONDS: ${WORK_FUZZ_TIMEOUT_SECONDS:-45}
+  WORK_TEMPLATE_TIMEOUT_SECONDS: ${WORK_TEMPLATE_TIMEOUT_SECONDS:-120}
+  WORK_SPECIALIZED_TIMEOUT_SECONDS: ${WORK_SPECIALIZED_TIMEOUT_SECONDS:-60}
+  WORK_SAFE_VERIFY_TIMEOUT_SECONDS: ${WORK_SAFE_VERIFY_TIMEOUT_SECONDS:-30}
+  WORK_EXECUTE_TIMEOUT_SECONDS: ${WORK_EXECUTE_TIMEOUT_SECONDS:-30}
+  WORK_HEARTBEAT_SECONDS: ${WORK_HEARTBEAT_SECONDS:-5}
+  WORK_LEASE_TTL_SECONDS: ${WORK_LEASE_TTL_SECONDS:-15}
+  WORK_RECLAIM_IDLE_SECONDS: ${WORK_RECLAIM_IDLE_SECONDS:-20}
+  WORK_MAX_ATTEMPTS: ${WORK_MAX_ATTEMPTS:-3}
+  WORK_RETRY_BACKOFF_SECONDS: ${WORK_RETRY_BACKOFF_SECONDS:-1,5,15}
+  TECHNICAL_WATCHDOG_SECONDS: ${TECHNICAL_WATCHDOG_SECONDS:-7200}
+  APPROVAL_DEADLINE_SECONDS: ${APPROVAL_DEADLINE_SECONDS:-86400}
+  TERMINAL_RETENTION_SECONDS: ${TERMINAL_RETENTION_SECONDS:-604800}
+  DEDUPE_RETENTION_SECONDS: ${DEDUPE_RETENTION_SECONDS:-691200}
+  WEBHOOK_URL: ${WEBHOOK_URL:-}
+  WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-}
+
+x-svc: &svc
+  restart: unless-stopped
+  depends_on:
+    redis:
+      condition: service_healthy
+  networks: [vts]
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: vts-redis
+    command: redis-server --appendonly yes --appendfsync everysec --aof-use-rdb-preamble yes
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${REDIS_HOST_PORT:-6379}:6379"]
+    volumes:
+      - vts-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [vts]
+
+  # ---------------- Người 3: Platform ----------------
+  gateway:
+    <<: *svc
+    build: { context: ., dockerfile: services/gateway/Dockerfile }
+    image: vts/gateway:1.0.0
+    container_name: vts-gateway
+    environment: { <<: *common-env, SERVICE_NAME: gateway }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${GATEWAY_HOST_PORT:-8000}:8000"]
+    depends_on:
+      redis: { condition: service_healthy }
+      scope-auth: { condition: service_started }
+
+  scope-auth:
+    <<: *svc
+    build: { context: ., dockerfile: services/scope-auth/Dockerfile }
+    image: vts/scope-auth:1.0.0
+    container_name: vts-scope-auth
+    environment: { <<: *common-env, SERVICE_NAME: scope-auth }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${SCOPE_HOST_PORT:-8001}:8000"]
+
+  orchestrator:
+    <<: *svc
+    build: { context: ., dockerfile: services/orchestrator/Dockerfile }
+    image: vts/orchestrator:1.0.0
+    container_name: vts-orchestrator
+    environment: { <<: *common-env, SERVICE_NAME: orchestrator, HISTORY_DB_PATH: /data/history.db }
+    volumes:
+      - vts-history-data:/data
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${ORCHESTRATOR_HOST_PORT:-8002}:8000"]
+    depends_on:
+      redis: { condition: service_healthy }
+      scope-auth: { condition: service_started }
+
+  dashboard:
+    <<: *svc
+    build: { context: ., dockerfile: services/dashboard/Dockerfile }
+    image: vts/dashboard:1.0.0
+    container_name: vts-dashboard
+    environment: { <<: *common-env, SERVICE_NAME: dashboard }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${DASHBOARD_HOST_PORT:-8080}:8000"]
+
+  # ---------------- Người 1: Recon ----------------
+  recon-subdomain:
+    <<: *svc
+    build: { context: ., dockerfile: services/recon-subdomain/Dockerfile }
+    image: vts/recon-subdomain:1.0.0
+    container_name: vts-recon-subdomain
+    environment: { <<: *common-env, SERVICE_NAME: recon-subdomain }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${RECON_SUBDOMAIN_HOST_PORT:-8011}:8000"]
+
+  recon-httpprobe:
+    <<: *svc
+    build: { context: ., dockerfile: services/recon-httpprobe/Dockerfile }
+    image: vts/recon-httpprobe:1.0.0
+    container_name: vts-recon-httpprobe
+    environment: { <<: *common-env, SERVICE_NAME: recon-httpprobe }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${RECON_HTTPPROBE_HOST_PORT:-8012}:8000"]
+
+  recon-portfuzz:
+    <<: *svc
+    build: { context: ., dockerfile: services/recon-portfuzz/Dockerfile }
+    image: vts/recon-portfuzz:1.0.0
+    container_name: vts-recon-portfuzz
+    environment: { <<: *common-env, SERVICE_NAME: recon-portfuzz }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${RECON_PORTFUZZ_HOST_PORT:-8013}:8000"]
+
+  # ---------------- Người 2: Scan & Exploitation ----------------
+  scan-engine:
+    <<: *svc
+    build: { context: ., dockerfile: services/scan-engine/Dockerfile }
+    image: vts/scan-engine:1.0.0
+    container_name: vts-scan-engine
+    environment: { <<: *common-env, SERVICE_NAME: scan-engine, TEMPLATE_DIR: /app/templates }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${SCAN_ENGINE_HOST_PORT:-8021}:8000"]
+
+  scan-specialized:
+    <<: *svc
+    build: { context: ., dockerfile: services/scan-specialized/Dockerfile }
+    image: vts/scan-specialized:1.0.0
+    container_name: vts-scan-specialized
+    environment: { <<: *common-env, SERVICE_NAME: scan-specialized }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${SCAN_SPECIALIZED_HOST_PORT:-8022}:8000"]
+
+  verification:
+    <<: *svc
+    build: { context: ., dockerfile: services/verification/Dockerfile }
+    image: vts/verification:1.0.0
+    container_name: vts-verification
+    environment: { <<: *common-env, SERVICE_NAME: verification, DRY_RUN: "true" }
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${VERIFICATION_HOST_PORT:-8023}:8000"]
+
+  # ---------------- Demo-only intentionally vulnerable target ----------------
+  vuln-target:
+    profiles: ["demo"]
+    build: { context: ., dockerfile: services/vuln-target/Dockerfile }
+    image: vts/vuln-target:1.0.0
+    container_name: vts-vuln-target
+    ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${VULN_TARGET_HOST_PORT:-8090}:80"]
+    networks: [vts]
+    restart: unless-stopped
+
+networks:
+  vts:
+    driver: bridge
+
+volumes:
+  vts-redis-data:
+  vts-history-data:

@@ -1,0 +1,22 @@
+id: env-file-exposure
+info:
+  name: Exposed .env file
+  severity: high
+  description: Detects a publicly accessible .env file leaking credentials/API keys.
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.env"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: regex
+        part: body
+        regex:
+          - "(?i)(DB_PASSWORD|SECRET_KEY|AWS_ACCESS_KEY_ID|API_KEY)\\s*="
+    extractors:
+      - type: regex
+        part: body
+        regex: ["(?i)([A-Z_]+)\\s*="]
+        group: 1

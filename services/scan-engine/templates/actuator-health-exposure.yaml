@@ -1,0 +1,23 @@
+id: spring-actuator-exposure
+info:
+  name: Spring Boot Actuator Exposure
+  severity: medium
+  description: Detects an exposed Spring Boot actuator health/env endpoint via JSON matcher.
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/actuator/health"
+      - "{{BaseURL}}/health"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: json
+        part: body
+        json:
+          - "$.status"
+    extractors:
+      - type: regex
+        part: body
+        regex: ["\"status\"\\s*:\\s*\"([A-Z]+)\""]
+        group: 1

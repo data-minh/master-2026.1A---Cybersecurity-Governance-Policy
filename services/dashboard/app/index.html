@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" id="themeColor" content="#f1f3f6">
+<title>VTS - Bảng điều khiển kiểm thử</title>
+<script>
+/* Set the theme before first paint to avoid a flash. */
+(function(){var t=null;try{t=localStorage.getItem('vts-theme');}catch(e){}
+if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+document.documentElement.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f1f3f6;--surface:#ffffff;--sunken:#e9edf2;--ink:#16212b;--muted:#566677;--faint:#66737f;
+  --line:#d8dee5;--line-strong:#b4bfcb;
+  --accent:#0b6e75;--accent-ink:#ffffff;--accent-soft:#dcf0f1;
+  --ok:#17744a;--ok-soft:#dff3e8;--warn:#955700;--warn-soft:#fbebd0;--bad:#b42f2f;--bad-soft:#fbe3e3;
+  --hold:#5b3fb5;--hold-soft:#e9e3fa;--info:#2b5fa8;--info-soft:#dee9f8;
+  --shadow:0 1px 2px rgba(22,33,43,.06);
+  --sans:'Be Vietnam Pro',system-ui,'Segoe UI',Roboto,sans-serif;--mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+  --r-s:6px;--r-m:10px;
+}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0c1217;--surface:#131b22;--sunken:#0f161c;--ink:#e5ecf2;--muted:#98a8b7;--faint:#8394a4;
+  --line:#243240;--line-strong:#35485b;
+  --accent:#52c7cc;--accent-ink:#06282a;--accent-soft:#12383b;
+  --ok:#4ed08f;--ok-soft:#10301f;--warn:#f0b452;--warn-soft:#3a2b0e;--bad:#ff8a8a;--bad-soft:#401a1a;
+  --hold:#b9a4ff;--hold-soft:#2a2152;--info:#7db2f5;--info-soft:#14284a;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+.skip{position:absolute;left:12px;top:-60px;z-index:200;background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:var(--r-s);text-decoration:none;font-weight:600}
+.skip:focus{top:10px}
+button,select,input,textarea,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+h1,h2{text-wrap:balance}
+select option{background:var(--surface);color:var(--ink)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--accent)}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;padding:18px 14px;background:var(--surface);border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 16px;font-weight:700;font-size:18px;letter-spacing:.2px}
+.brand svg{flex:none}
+.brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border:0;border-radius:var(--r-s);background:transparent;color:var(--muted);font-weight:500;text-align:left;cursor:pointer}
+.nav button:hover{background:var(--sunken);color:var(--ink)}
+.nav button[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav svg{flex:none;width:18px;height:18px}
+.nav .tag{margin-left:auto;font-size:11px;color:var(--faint);font-weight:500}
+.side-foot{margin-top:auto;display:grid;gap:10px;padding:12px 8px 0;border-top:1px solid var(--line)}
+#userLabel{display:none;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+#userLabel .nm{color:var(--ink);font-weight:600}
+.role{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 7px}
+.row-btns{display:flex;gap:8px}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line-strong);border-radius:var(--r-s);padding:7px 12px;font-size:13px;cursor:pointer}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0}
+.icon-btn svg{width:18px;height:18px}
+#connectionState{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--sunken);width:fit-content}
+#connectionState::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+#connectionState[data-state=live]{color:var(--ok)}#connectionState[data-state=live]::before{background:var(--ok)}
+#connectionState[data-state=reconnecting]{color:var(--warn)}#connectionState[data-state=reconnecting]::before{background:var(--warn);animation:blink 1.1s steps(1) infinite}
+#connectionState[data-state=polling]{color:var(--info)}#connectionState[data-state=polling]::before{background:var(--info)}
+#connectionState[data-state=offline]{color:var(--bad)}#connectionState[data-state=offline]::before{background:var(--bad)}
+@keyframes blink{50%{opacity:.3}}
+
+.main{padding:26px 32px 64px;min-width:0}
+.view{max-width:1120px;margin:0 auto}
+.view>header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.1px}
+.lede{margin:2px 0 0;color:var(--muted);font-size:14px}
+h2{margin:0;font-size:15px;font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.stack{display:grid;gap:16px}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;margin-bottom:12px}
+.hint{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);font-size:14px;padding:18px 4px}
+.error{color:var(--bad);font-size:13.5px;min-height:20px;margin-top:8px}
+
+/* ---------- forms ---------- */
+.field{display:grid;gap:5px}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-s);padding:9px 11px}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:hover,select:hover,textarea:hover{border-color:var(--muted)}
+textarea{font-family:var(--mono);font-size:12.5px;line-height:1.55;min-height:260px;resize:vertical;tab-size:2}
+.btn{cursor:pointer;border:1px solid var(--accent);border-radius:var(--r-s);padding:9px 16px;font-weight:600;background:var(--accent);color:var(--accent-ink)}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+.btn.secondary{background:transparent;color:var(--accent)}
+.btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.command{display:grid;grid-template-columns:minmax(0,1fr) 170px 150px auto;gap:12px;align-items:end}
+@media(max-width:900px){.command{grid-template-columns:1fr 1fr}.command .go{grid-column:1/-1}}
+
+/* ---------- login ---------- */
+#loginPanel{max-width:400px;margin:9vh auto 0}
+#loginPanel h1{font-size:20px}
+#loginForm{display:grid;gap:12px;margin-top:14px}
+.creds{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.7}
+.creds code{font-family:var(--mono);color:var(--ink)}
+
+/* ---------- pipeline ---------- */
+.console{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+@media(max-width:980px){.console{grid-template-columns:1fr}}
+.rail-wrap{padding:18px 20px;border-right:1px solid var(--line)}
+@media(max-width:980px){.rail-wrap{border-right:0;border-bottom:1px solid var(--line)}}
+.rail{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:stretch;margin-top:14px}
+@media(max-width:700px){.rail{grid-template-columns:1fr}.conn{display:none}.stage{margin-bottom:10px}}
+.stage{border:1px solid var(--line);border-radius:var(--r-s);padding:12px 13px 13px;background:var(--sunken);border-top-width:3px;border-top-color:var(--line-strong)}
+.stage-name{font-weight:600;font-size:14px}
+.stage-badge{display:inline-block;margin-top:7px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line-strong);border-radius:4px;padding:1px 8px}
+.stage-detail{color:var(--muted);font-size:12.5px;margin-top:9px;min-height:36px}
+.stage .bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden;margin-top:8px}
+.stage .bar i{display:block;height:100%;width:100%;background:var(--accent);transform:scaleX(0);transform-origin:left center;transition:transform .35s ease}
+.conn{align-self:center;height:2px;background:var(--line-strong);border-radius:2px}
+.conn.live{background:var(--accent)}
+.stage.running{border-top-color:var(--warn)}
+.stage.running .stage-badge{color:var(--warn);border-color:var(--warn)}
+.stage.running .bar i{background:var(--warn)}
+.stage.succeeded{border-top-color:var(--ok)}
+.stage.succeeded .stage-badge{color:var(--ok);border-color:var(--ok)}
+.stage.succeeded .bar i{background:var(--ok)}
+.stage.failed,.stage.timed_out{border-top-color:var(--bad)}
+.stage.failed .stage-badge,.stage.timed_out .stage-badge{color:var(--bad);border-color:var(--bad)}
+.stage.failed .bar i,.stage.timed_out .bar i{background:var(--bad)}
+.stage.skipped{opacity:.55;border-top-style:dashed}
+.readout{padding:18px 20px;display:flex;flex-direction:column;gap:2px}
+.readout .lbl{font-size:13px;color:var(--muted)}
+#pipeState{font-weight:700;font-size:22px;margin:2px 0}
+.readout[data-status=running] #pipeState{color:var(--warn)}
+.readout[data-status=awaiting_approval] #pipeState{color:var(--hold)}
+.readout[data-status=succeeded] #pipeState{color:var(--ok)}
+.readout[data-status=failed] #pipeState,.readout[data-status=timed_out] #pipeState,.readout[data-status=canceled] #pipeState{color:var(--bad)}
+#targetLabel{font-family:var(--mono);font-size:13px;color:var(--accent);min-height:19px;word-break:break-all}
+.rev{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.rev .k{font-size:12.5px;color:var(--muted)}
+#revision{font-family:var(--mono);font-weight:600;font-size:38px;line-height:1.05}
+#progressAge{font-size:12.5px;color:var(--muted);margin-top:6px}
+.report-link{font-size:13px;white-space:nowrap}
+
+.gauges{display:grid;grid-template-columns:repeat(4,1fr)}
+@media(max-width:700px){.gauges{grid-template-columns:repeat(2,1fr)}}
+.gauge{padding:14px 18px;border-right:1px solid var(--line)}
+.gauge:last-child{border-right:0}
+@media(max-width:700px){.gauge:nth-child(2){border-right:0}.gauge:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+.gauge b{display:block;font-family:var(--mono);font-weight:600;font-size:28px;line-height:1.1}
+.gauge span{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+#g-approval[data-active=yes] b,#g-approval[data-active=yes] span{color:var(--hold)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media(max-width:980px){.two{grid-template-columns:1fr}}
+
+/* ---------- approvals / findings ---------- */
+.appr-list{display:grid;gap:10px}
+.appr{border:1px solid var(--line);border-left:4px solid var(--hold);border-radius:var(--r-s);padding:11px 13px;background:var(--sunken)}
+.appr.resolved{border-left-color:var(--line-strong);opacity:.8}
+.appr-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.appr-url{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.appr-stat{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.appr-id{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:4px;word-break:break-all}
+.appr-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.act{cursor:pointer;font-size:13px;font-weight:600;border-radius:var(--r-s);padding:6px 12px;background:transparent;border:1px solid var(--line-strong)}
+.act.ok{color:var(--ok);border-color:var(--ok)}.act.no{color:var(--bad);border-color:var(--bad)}.act.run{color:var(--hold);border-color:var(--hold)}
+.act:disabled{opacity:.45;cursor:default}
+.need-role{font-size:12.5px;color:var(--muted);margin-top:8px}
+.result{padding:11px 2px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.result:last-child{border-bottom:0}
+.result .nm{font-weight:600;font-size:14px}
+.result .u{font-family:var(--mono);font-size:12px;color:var(--muted);word-break:break-all;margin-top:2px}
+.pv{flex:none;cursor:pointer;background:transparent;border:1px solid var(--line-strong);color:var(--accent);border-radius:var(--r-s);padding:5px 11px;font-size:13px;font-weight:600}
+.pv:hover{border-color:var(--accent)}
+
+/* severity + status badges always carry text, never color alone */
+.sev,.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:4px;padding:1px 8px;border:1px solid currentColor;white-space:nowrap}
+.sev.critical{color:var(--bad);background:var(--bad-soft)}
+.sev.high{color:var(--warn);background:var(--warn-soft)}
+.sev.medium{color:var(--info);background:var(--info-soft)}
+.sev.low{color:var(--muted);background:var(--sunken)}
+.sev.info{color:var(--faint);background:var(--sunken)}
+.pill.succeeded{color:var(--ok);background:var(--ok-soft)}
+.pill.failed,.pill.timed_out{color:var(--bad);background:var(--bad-soft)}
+.pill.canceled{color:var(--muted);background:var(--sunken)}
+.pill.running,.pill.queued{color:var(--warn);background:var(--warn-soft)}
+.pill.awaiting_approval{color:var(--hold);background:var(--hold-soft)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-s)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+caption{text-align:left;padding:0 0 8px;color:var(--muted);font-size:13px}
+th,td{padding:10px 12px;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
+th{font-size:12.5px;font-weight:600;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr[data-id]{cursor:pointer}
+tbody tr[data-id]:hover{background:var(--sunken)}
+td.num,th.num{text-align:right}
+th.num{font-family:var(--sans)}
+.nowrap{white-space:nowrap}
+.sevs{display:flex;gap:5px;flex-wrap:wrap}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px}
+.toolbar .field{min-width:150px}
+.toolbar .grow{flex:1;min-width:200px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;font-size:13px;color:var(--muted)}
+.chip-id{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* ---------- scope / templates ---------- */
+.notice{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-s);background:var(--info-soft);color:var(--info);font-size:13.5px;margin-bottom:12px}
+.affirm{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--muted);margin:12px 0 2px}
+.affirm input{width:auto;margin-top:4px}
+.scope-add{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:12px;align-items:end}
+@media(max-width:700px){.scope-add{grid-template-columns:1fr}}
+.editor-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media(max-width:980px){.editor-grid{grid-template-columns:1fr}}
+.validation{margin-top:10px;padding:10px 12px;border-radius:var(--r-s);font-size:13.5px}
+.validation.ok{background:var(--ok-soft);color:var(--ok)}
+.validation.bad{background:var(--bad-soft);color:var(--bad)}
+.validation ul{margin:6px 0 0 18px;padding:0}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- dialogs ---------- */
+dialog{border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--surface);color:var(--ink);padding:0;width:min(920px,calc(100vw - 32px));max-height:86vh;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+dialog::backdrop{background:rgba(6,12,18,.62)}
+dialog[open]{display:flex;flex-direction:column;animation:pop .14s ease-out}
+@keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.d-head{display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.d-head h2{font-size:17px;word-break:break-all}
+.d-body{overflow:auto;overscroll-behavior:contain;padding:16px 20px;display:grid;gap:16px}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div{border:1px solid var(--line);border-radius:var(--r-s);padding:9px 12px}
+.kv dt{font-size:12.5px;color:var(--muted)}.kv dd{margin:2px 0 0;font-weight:600;font-variant-numeric:tabular-nums;word-break:break-word}
+#pvBody{margin:0;font-family:var(--mono);font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+#toast{position:fixed;right:20px;bottom:20px;z-index:100;display:grid;gap:8px}
+.toast{background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:var(--r-s);font-size:13.5px;max-width:340px}
+.toast.bad{background:var(--bad);color:#fff}
+
+/* ---------- mobile shell ---------- */
+@media(max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 12px;gap:6px 10px;border-right:0;border-bottom:1px solid var(--line)}
+  .brand{padding:0 6px 0 0}.brand small{display:none}
+  .nav{flex-direction:row;overflow-x:auto;flex:1 1 100%;order:3;min-width:0}
+  .nav button{width:auto;white-space:nowrap}
+  .side-foot{margin:0 0 0 auto;border:0;padding:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .main{padding:18px 14px 56px}
+}
+@media(max-width:600px){.result{flex-wrap:wrap}.result>div:first-child{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua tới nội dung chính</a>
+<div class="app" id="shell">
+  <aside class="side" aria-label="Điều hướng chính">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" stroke="var(--line-strong)" stroke-width="1.5"/><path d="M4 13h4.5l2.2-5.5 3.6 11 2.2-5.5H22" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span translate="no">VTS<small>Bảng điều khiển kiểm thử</small></span>
+    </div>
+    <nav class="nav" id="nav" aria-label="Các mục" hidden>
+      <button type="button" data-view="scan" data-roles="operator approver admin" aria-current="page">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2.5M10 14.5V17M3 10h2.5M14.5 10H17"/></svg>Phiên quét</button>
+      <button type="button" data-view="history" data-roles="operator approver admin">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><path d="M3 3.5V7h3.5"/><path d="M10 6.5V10l2.5 1.6"/></svg>Lịch sử kiểm tra</button>
+      <button type="button" data-view="scope" data-roles="approver admin">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 16.5 5v4.7c0 3.8-2.7 6.4-6.5 7.8-3.8-1.400-6.500-4-6.500-7.800V5z"/><path d="m7.200 10 2 2 3.600-4"/></svg>Phạm vi<span class="tag" id="scopeTag"></span></button>
+      <button type="button" data-view="templates" data-roles="admin">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 2.500h6.500L15 6v11.500H5z"/><path d="M11.500 2.500V6H15M7.500 10h5M7.500 13h5"/></svg>Template</button>
+    </nav>
+    <div class="side-foot">
+      <div id="connectionState" role="status" aria-live="polite" title="Trạng thái luồng cập nhật">Đang kết nối lại</div>
+      <div id="userLabel"><span class="nm"></span><span class="role"></span></div>
+      <div class="row-btns">
+        <button type="button" id="themeToggle" class="ghost icon-btn" aria-label="Chuyển sang chế độ tối" title="Đổi giao diện sáng/tối">
+          <svg id="iconMoon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.500 11.500A7 7 0 0 1 8.500 3.500a7 7 0 1 0 8 8z"/></svg>
+          <svg id="iconSun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="10" cy="10" r="3.500"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.300 4.300l1.400 1.400M14.300 14.300l1.400 1.400M15.700 4.300l-1.400 1.400M5.700 14.300l-1.400 1.400"/></svg>
+        </button>
+        <button type="button" id="logoutButton" class="ghost" hidden>Đăng xuất</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="main" tabindex="-1">
+    <section id="loginPanel" class="panel pad" hidden aria-labelledby="loginTitle">
+      <h1 id="loginTitle">Đăng nhập</h1>
+      <p class="lede">Quyền của bạn quyết định những mục và thao tác nhìn thấy. Máy chủ kiểm tra lại mọi thao tác.</p>
+      <form id="loginForm">
+        <div class="field"><label for="username">Tên đăng nhập</label>
+          <input id="username" name="username" autocomplete="username" placeholder="operator"></div>
+        <div class="field"><label for="password">Mật khẩu</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu…"></div>
+        <button class="btn" type="submit">Đăng nhập</button>
+      </form>
+      <div id="loginError" class="error" role="alert"></div>
+      <div class="creds">Tài khoản lab: <code>operator</code>, <code>approver</code>, <code>admin</code>. Mật khẩu là tên tài khoản cộng <code>123</code>.</div>
+    </section>
+
+    <div id="app" hidden>
+      <!-- ================= Phiên quét ================= -->
+      <section class="view" id="view-scan" aria-labelledby="t-scan">
+        <header><div><h1 id="t-scan">Phiên quét</h1><p class="lede">Khởi chạy và theo dõi pipeline Thu thập, Dò lỗ hổng, Xác minh theo thời gian thực.</p></div></header>
+        <div class="stack">
+          <section class="panel pad" aria-label="Khởi chạy phiên quét">
+            <div class="phead"><h2>Khởi chạy phiên quét</h2><span class="hint">Chỉ chạy trên mục tiêu đã nằm trong phạm vi được phép</span></div>
+            <form id="scanForm" class="command">
+              <div class="field"><label for="target">Mục tiêu</label>
+                <input id="target" name="target" value="vuln-target" autocomplete="off" spellcheck="false"></div>
+              <div class="field"><label for="mode">Chế độ</label>
+                <select id="mode" name="mode"><option value="full">Toàn bộ</option><option value="recon">Chỉ thu thập</option><option value="recon-passive">Thu thập thụ động</option></select></div>
+              <div class="field"><label for="execMode">Thực thi</label>
+                <select id="execMode" name="exec_mode"><option value="sequential">Lần lượt</option><option value="parallel">Song song</option></select></div>
+              <button class="btn go" type="submit">Bắt đầu quét</button>
+            </form>
+            <div id="error" class="error" role="alert"></div>
+          </section>
+
+          <section class="panel console" aria-label="Tiến độ pipeline">
+            <div class="rail-wrap">
+              <h2>Luồng pipeline</h2>
+              <div class="hint">Ba giai đoạn có thể chạy chồng nhau; giai đoạn sau bắt đầu không làm đóng giai đoạn trước.</div>
+              <div class="rail">
+                <article class="stage pending" data-stage="recon">
+                  <div class="stage-name">Thu thập</div><div class="stage-badge">Chờ</div><div class="stage-detail">Chờ</div><div class="bar"><i></i></div></article>
+                <span class="conn" id="conn1"></span>
+                <article class="stage pending" data-stage="scan">
+                  <div class="stage-name">Dò lỗ hổng</div><div class="stage-badge">Chờ</div><div class="stage-detail">Chờ</div><div class="bar"><i></i></div></article>
+                <span class="conn" id="conn2"></span>
+                <article class="stage pending" data-stage="verification">
+                  <div class="stage-name">Xác minh và duyệt</div><div class="stage-badge">Chờ</div><div class="stage-detail">Chờ</div><div class="bar"><i></i></div></article>
+              </div>
+            </div>
+            <div class="readout" id="readout">
+              <span class="lbl">Trạng thái phiên</span>
+              <div id="pipeState">Đang xếp hàng</div>
+              <div id="targetLabel" translate="no"></div>
+              <div class="rev">
+                <div><div class="k">Revision</div><div id="revision">0</div><div id="progressAge">chưa có cập nhật</div></div>
+                <a class="report-link" id="reportLink" href="#" hidden download>Tải báo cáo JSON</a>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel gauges" aria-label="Số liệu">
+            <div class="gauge"><b id="assetCount">0</b><span>Tài sản phát hiện</span></div>
+            <div class="gauge"><b id="findingCount">0</b><span>Lỗ hổng nghi ngờ</span></div>
+            <div class="gauge"><b id="verifiedCount">0</b><span>Đã xác minh</span></div>
+            <div class="gauge" id="g-approval"><b id="approvalCount">0</b><span>Chờ quyết định</span></div>
+          </section>
+
+          <div class="two">
+            <section class="panel pad" aria-labelledby="t-appr">
+              <div class="phead"><h2 id="t-appr">Cần phê duyệt</h2><button type="button" id="reloadApprovals" class="ghost">Tải lại</button></div>
+              <div id="approvals" class="appr-list"><div class="empty">Chưa có phiên nào đang chạy.</div></div>
+            </section>
+            <section class="panel pad" aria-labelledby="t-find">
+              <div class="phead"><h2 id="t-find">Phát hiện</h2><button type="button" id="reloadResults" class="ghost">Tải lại</button></div>
+              <div id="results" class="results"><div class="empty">Chưa có phát hiện nào.</div></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Lịch sử ================= -->
+      <section class="view" id="view-history" aria-labelledby="t-history" hidden>
+        <header><div><h1 id="t-history">Lịch sử kiểm tra</h1><p class="lede">Mọi phiên quét đã kết thúc được lưu lại cùng kết quả, kể cả phiên bị hủy hoặc hết hạn.</p></div></header>
+        <section class="panel pad">
+          <form class="toolbar" id="historyFilters" role="search">
+            <div class="field grow"><label for="hTarget">Tìm theo mục tiêu</label><input id="hTarget" name="target" type="search" placeholder="vd: vuln-target…" autocomplete="off"></div>
+            <div class="field"><label for="hStatus">Kết quả</label>
+              <select id="hStatus" name="status"><option value="">Tất cả</option><option value="succeeded">Thành công</option><option value="failed">Thất bại</option><option value="timed_out">Quá thời gian</option><option value="canceled">Đã hủy</option></select></div>
+            <button type="submit" class="btn secondary">Lọc</button>
+            <button type="button" id="hReload" class="ghost">Tải lại</button>
+          </form>
+          <div class="table-wrap">
+            <table id="historyTable">
+              <caption class="sr">Danh sách các lần kiểm tra đã kết thúc</caption>
+              <thead><tr><th scope="col">Hoàn tất lúc</th><th scope="col">Mục tiêu</th><th scope="col">Chế độ</th><th scope="col">Kết quả</th><th scope="col">Phát hiện theo mức độ</th><th scope="col" class="num">Tài sản</th><th scope="col" class="num">Đã xác minh</th><th scope="col" class="num">Thời lượng</th><th scope="col">Người chạy</th></tr></thead>
+              <tbody id="historyRows"><tr><td colspan="9" class="empty">Đang tải lịch sử…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pager"><span id="historyCount" role="status"></span>
+            <span class="row-btns"><button type="button" class="ghost" id="hPrev">Trang trước</button><button type="button" class="ghost" id="hNext">Trang sau</button></span></div>
+          <div id="historyError" class="error" role="alert"></div>
+        </section>
+      </section>
+
+      <!-- ================= Phạm vi ================= -->
+      <section class="view" id="view-scope" aria-labelledby="t-scope" hidden>
+        <header><div><h1 id="t-scope">Phạm vi được phép</h1><p class="lede">Hệ thống chỉ kiểm thử những mục tiêu nằm trong danh sách này.</p></div>
+          <button type="button" id="reloadScope" class="ghost">Tải lại</button></header>
+        <section class="panel pad">
+          <div id="scopeReadonly" class="notice" hidden>Bạn chỉ có quyền xem danh sách này. Chỉ quản trị viên (admin) mới thêm hoặc xóa mục tiêu.</div>
+          <div class="table-wrap"><table>
+            <caption class="sr">Danh sách mục tiêu được phép kiểm thử</caption>
+            <thead><tr><th scope="col">Mục tiêu</th><th scope="col">Loại</th><th scope="col">Ghi chú</th><th scope="col" id="scopeActionHead"><span class="sr">Thao tác</span></th></tr></thead>
+            <tbody id="scopeRows"><tr><td colspan="4" class="empty">Đang tải…</td></tr></tbody></table></div>
+          <div id="scopeAdmin" hidden style="margin-top:18px">
+            <h2 style="margin-bottom:10px">Thêm mục tiêu được ủy quyền</h2>
+            <div class="scope-add">
+              <div class="field"><label for="scopeTarget">Mục tiêu</label><input id="scopeTarget" name="scope_target" placeholder="vd: lab.example.com hoặc 10.0.0.0/24…" autocomplete="off" spellcheck="false"></div>
+              <div class="field"><label for="scopeType">Loại</label><select id="scopeType" name="scope_type"><option value="domain">domain</option><option value="cidr">cidr</option></select></div>
+              <button type="button" id="scopeAddBtn" class="btn">Thêm vào phạm vi</button>
+            </div>
+            <label class="affirm"><input type="checkbox" id="scopeAuth" name="authorized"><span>Tôi xác nhận được phép kiểm thử mục tiêu này (có sự đồng ý của chủ sở hữu).</span></label>
+            <div id="scopeError" class="error" role="alert"></div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ================= Template ================= -->
+      <section class="view" id="view-templates" aria-labelledby="t-templates" hidden>
+        <header><div><h1 id="t-templates">Quản lý template</h1><p class="lede">Template mô tả một phép kiểm tra chỉ-đọc. Template mới có hiệu lực cho các phiên quét sau khoảng 5 giây.</p></div>
+          <button type="button" id="reloadTemplates" class="ghost">Tải lại</button></header>
+        <div class="editor-grid">
+          <section class="panel pad" aria-labelledby="t-tpl-list">
+            <div class="phead"><h2 id="t-tpl-list">Template đã thêm</h2></div>
+            <div class="table-wrap"><table>
+              <caption class="sr">Template do quản trị viên thêm</caption>
+              <thead><tr><th scope="col">Mã</th><th scope="col">Tên</th><th scope="col">Mức độ</th><th scope="col"><span class="sr">Thao tác</span></th></tr></thead>
+              <tbody id="templateRows"><tr><td colspan="4" class="empty">Đang tải…</td></tr></tbody></table></div>
+            <p class="hint" style="margin-top:10px">Các template mẫu đi kèm hệ thống (.env, .git/config, phpinfo, actuator, directory listing) luôn được dùng và không hiển thị ở đây.</p>
+          </section>
+          <section class="panel pad" aria-labelledby="t-tpl-add">
+            <div class="phead"><h2 id="t-tpl-add">Thêm template</h2><button type="button" id="tplSample" class="ghost">Chèn mẫu</button></div>
+            <div class="field"><label for="tplBody">Nội dung YAML</label><textarea id="tplBody" name="yaml_body" spellcheck="false" autocomplete="off" placeholder="id: ten-template&#10;info:&#10;  name: Tên hiển thị&#10;  severity: low&#10;requests:&#10;  - method: GET&#10;    path: [&quot;{{BaseURL}}/duong-dan&quot;]&#10;    matchers:&#10;      - type: status&#10;        status: [200]"></textarea></div>
+            <div id="tplResult" class="validation" hidden role="status"></div>
+            <div class="btn-row"><button type="button" id="tplValidate" class="btn secondary">Kiểm tra</button><button type="button" id="tplSave" class="btn">Lưu template</button></div>
+            <p class="hint" style="margin-top:10px">Chỉ cho phép method GET, HEAD, OPTIONS. Template chứa khóa như command, exec, shell hoặc regex có nguy cơ treo sẽ bị từ chối.</p>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- chi tiết lịch sử -->
+<dialog id="historyDialog" aria-labelledby="hdTitle">
+  <div class="d-head"><div style="flex:1;min-width:200px"><h2 id="hdTitle">Chi tiết phiên quét</h2><div class="chip-id" id="hdId"></div></div><span id="hdStatus"></span></div>
+  <div class="d-body" id="hdBody"></div>
+  <div class="d-foot"><button type="button" class="ghost" id="hdCsv">Xuất CSV phát hiện</button><button type="button" class="ghost" id="hdJson">Tải JSON</button><button type="button" class="btn" id="hdClose">Đóng</button></div>
+</dialog>
+<!-- xem trước bằng chứng -->
+<dialog id="previewModal" aria-labelledby="pvUrl">
+  <div class="d-head"><div style="flex:1;min-width:200px"><h2 id="pvUrl" class="mono" style="font-size:14px"></h2><div class="hint" id="pvStatus"></div></div></div>
+  <div class="d-body"><pre id="pvBody"></pre></div>
+  <div class="d-foot"><button type="button" class="ghost" id="pvDownload">Tải xuống</button><button type="button" class="btn" id="pvClose">Đóng</button></div>
+</dialog>
+<!-- xác nhận xóa -->
+<dialog id="confirmDialog" aria-labelledby="cfTitle" style="width:min(440px,calc(100vw - 32px))">
+  <div class="d-head"><h2 id="cfTitle">Xác nhận</h2></div>
+  <div class="d-body"><p id="cfText" style="margin:0"></p></div>
+  <div class="d-foot"><button type="button" class="ghost" id="cfNo">Hủy</button><button type="button" class="btn danger" id="cfYes">Xóa</button></div>
+</dialog>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+var currentScan=null,lastRevision=0,lastSnapshot=null,lastSnapshotAt=0,eventSource=null,currentRole='',currentUser='';
+var fallbackActive=false,pollTimer=null,sseStableTimer=null,detailInFlight=false,listInFlight=false,resultInFlight=false,resultsRevision=-1,approvalsInFlight=false;
+var launchIdempotencyKey=null,previewBlob=null,activeView='scan',historyState={offset:0,limit:15,status:'',target:''},historyDetail=null,historyInFlight=false;
+window.__usesSetInterval=false;
+const SCAN_LABEL={queued:'Đang xếp hàng',running:'Đang xử lý',awaiting_approval:'Chờ phê duyệt/thao tác',succeeded:'Thành công',failed:'Thất bại',timed_out:'Quá thời gian',canceled:'Đã hủy'};
+const STAGE_LABEL={pending:'Chờ',running:'Đang chạy',succeeded:'Hoàn tất',failed:'Thất bại',timed_out:'Quá thời gian',skipped:'Bỏ qua'};
+const APPROVAL_LABEL={pending:'Chờ quyết định',approved:'Đã duyệt, chờ thực thi',executing:'Đang thực thi',executed:'Đã thực thi',rejected:'Đã từ chối',execution_failed:'Thực thi thất bại',timed_out:'Quá hạn'};
+const MODE_LABEL={full:'Toàn bộ',recon:'Chỉ thu thập','recon-passive':'Thu thập thụ động'};
+const SEV_LABEL={critical:'Nghiêm trọng',high:'Cao',medium:'Trung bình',low:'Thấp',info:'Thông tin'};
+const SEVERITIES=['critical','high','medium','low','info'];
+const VIEW_ROLES={scan:['operator','approver','admin'],history:['operator','approver','admin'],scope:['approver','admin'],templates:['admin']};
+const TEMPLATE_SAMPLE='id: kiem-tra-trang-admin\ninfo:\n  name: Trang quản trị truy cập được\n  severity: low\nrequests:\n  - method: GET\n    path: ["{{BaseURL}}/admin"]\n    matchers-condition: and\n    matchers:\n      - type: status\n        status: [200]\n      - type: word\n        part: body\n        words: ["login"]\n';
+const CSRF={'X-VTS-CSRF':'1'};
+const $=id=>document.getElementById(id);
+function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtTime(v){if(!v)return '-';const d=new Date(v);return isNaN(d)?'-':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fmtDuration(s){if(s==null)return '-';if(s<60)return s+' giây';const m=Math.floor(s/60);return m+' phút '+(s%60)+' giây';}
+function toast(message,bad){const box=$('toast');const el=document.createElement('div');el.className='toast'+(bad?' bad':'');el.textContent=message;box.appendChild(el);setTimeout(()=>el.remove(),4200);}
+async function readError(response){let p={};try{p=await response.json();}catch(e){}return (p.error&&p.error.message)||(typeof p.detail==='string'?p.detail:'')||('Lỗi '+response.status);}
+
+/* ---------- theme ---------- */
+function setHidden(el,hide){if(hide)el.setAttribute('hidden','');else el.removeAttribute('hidden');}
+function currentTheme(){return document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';}
+function setTheme(theme,persist){theme=theme==='dark'?'dark':'light';document.documentElement.setAttribute('data-theme',theme);
+  const dark=theme==='dark';setHidden($('iconMoon'),dark);setHidden($('iconSun'),!dark);
+  $('themeToggle').setAttribute('aria-label',dark?'Chuyển sang chế độ sáng':'Chuyển sang chế độ tối');
+  $('themeColor').setAttribute('content',dark?'#0c1217':'#f1f3f6');
+  if(persist){try{localStorage.setItem('vts-theme',theme);}catch(e){}}return theme;}
+$('themeToggle').addEventListener('click',()=>setTheme(currentTheme()==='dark'?'light':'dark',true));
+setTheme(currentTheme(),false);
+
+/* ---------- role + views ---------- */
+function canSee(view,role){return (VIEW_ROLES[view]||[]).indexOf(role)>=0;}
+function applyRole(role){currentRole=role||'';
+  document.querySelectorAll('#nav button[data-view]').forEach(b=>{b.hidden=!canSee(b.dataset.view,currentRole);});
+  $('nav').hidden=!currentRole;
+  $('scopeAdmin').hidden=currentRole!=='admin';$('scopeReadonly').hidden=currentRole!=='approver';
+  $('scopeActionHead').hidden=currentRole!=='admin';
+  $('scopeTag').textContent=currentRole==='approver'?'chỉ xem':'';
+  if(!canSee(activeView,currentRole))showView('scan');}
+function showView(name){if(!VIEW_ROLES[name]||!canSee(name,currentRole))name='scan';activeView=name;
+  Object.keys(VIEW_ROLES).forEach(v=>{const el=$('view-'+v);if(el)el.hidden=v!==name;});
+  document.querySelectorAll('#nav button[data-view]').forEach(b=>{if(b.dataset.view===name)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  try{history.replaceState(null,'','#'+name);}catch(e){}
+  if(name==='history')loadHistory();else if(name==='scope')loadScope();else if(name==='templates')loadTemplates();}
+$('nav').addEventListener('click',e=>{const b=e.target.closest('button[data-view]');if(b)showView(b.dataset.view);});
+
+function showLogin(){$('loginPanel').hidden=false;$('app').hidden=true;$('logoutButton').hidden=true;$('userLabel').style.display='none';applyRole('');
+  if(eventSource){eventSource.close();eventSource=null;}fallbackActive=false;clearTimeout(pollTimer);}
+async function checkSession(){try{const response=await fetch('/dashboard/me');if(response.status===401){showLogin();return;}if(!response.ok)throw new Error('me '+response.status);
+  const me=await response.json();currentUser=me.username||'';$('loginPanel').hidden=true;$('app').hidden=false;$('logoutButton').hidden=false;
+  $('userLabel').style.display='flex';$('userLabel').querySelector('.nm').textContent=me.username;$('userLabel').querySelector('.role').textContent=me.role;
+  applyRole(me.role||'');const wanted=(location.hash||'').replace('#','');showView(canSee(wanted,currentRole)?wanted:'scan');refreshList();}
+  catch(error){$('error').textContent='Không kiểm tra được phiên đăng nhập: '+error.message;}}
+
+function setConnectionState(state){const el=$('connectionState');if(state==='live')el.textContent='Trực tiếp';else if(state==='reconnecting')el.textContent='Đang kết nối lại';else if(state==='polling')el.textContent='Cập nhật dự phòng';else el.textContent='Mất kết nối, số liệu lúc '+(lastSnapshotAt?new Date(lastSnapshotAt).toLocaleTimeString():'-');el.dataset.state=state;}
+
+/* ---------- live scan ---------- */
+function applySnapshot(snapshot){
+  if(!snapshot||typeof snapshot.revision!=='number')return false;
+  if(currentScan&&snapshot.scan_id!==currentScan){currentScan=snapshot.scan_id;lastRevision=0;}
+  if(snapshot.revision<=lastRevision)return false;
+  currentScan=snapshot.scan_id;lastRevision=snapshot.revision;lastSnapshot=snapshot;lastSnapshotAt=Date.now();
+  $('readout').dataset.status=snapshot.status;
+  $('pipeState').textContent=SCAN_LABEL[snapshot.status]||snapshot.status;
+  $('targetLabel').textContent=snapshot.target||'';
+  $('revision').textContent=snapshot.revision;
+  $('progressAge').textContent='cập nhật '+new Date(snapshot.updated_at).toLocaleTimeString();
+  const link=$('reportLink');link.hidden=false;link.href='/dashboard/scans/'+encodeURIComponent(snapshot.scan_id)+'/report';link.setAttribute('download','bao-cao-'+snapshot.scan_id+'.json');
+  for(const name of ['recon','scan','verification']){
+    const stage=snapshot.stages[name];const node=document.querySelector('[data-stage="'+name+'"]');
+    node.className='stage '+stage.status;
+    node.querySelector('.stage-badge').textContent=STAGE_LABEL[stage.status]||stage.status;
+    let detail=STAGE_LABEL[stage.status]||stage.status;
+    if(stage.status==='succeeded'&&stage.result_count===0)detail='Hoàn tất · 0 kết quả';
+    else detail+=' · '+stage.open_work+' mở / '+stage.completed_work+' xong · '+stage.result_count+' kết quả';
+    node.querySelector('.stage-detail').textContent=detail;
+    const total=stage.total_work||0;const pct=stage.status==='succeeded'?100:(total?Math.min(100,Math.round(100*(stage.completed_work+stage.failed_work+stage.timed_out_work)/total)):0);
+    node.querySelector('.bar i').style.transform='scaleX('+(pct/100)+')';
+  }
+  $('conn1').className='conn'+(snapshot.stages.scan.status!=='pending'?' live':'');
+  $('conn2').className='conn'+(snapshot.stages.verification.status!=='pending'?' live':'');
+  const results=snapshot.result_summary||{};
+  $('assetCount').textContent=results.assets||0;$('findingCount').textContent=results.findings||0;$('verifiedCount').textContent=results.verified||0;
+  const approval=snapshot.approval_summary||{};const waiting=(approval.pending||0)+(approval.approved_awaiting_execution||0)+(approval.executing||0);
+  $('approvalCount').textContent=waiting;$('g-approval').dataset.active=waiting>0?'yes':'no';
+  if(resultsRevision!==snapshot.revision)loadResultPage(snapshot.scan_id,'findings',null);
+  if(approval.total)loadApprovals(snapshot.scan_id);
+  return true;
+}
+
+function sevBadge(severity){const s=SEVERITIES.indexOf(String(severity).toLowerCase())>=0?String(severity).toLowerCase():'info';return '<span class="sev '+s+'">'+escapeHtml(SEV_LABEL[s])+'</span>';}
+async function loadResultPage(scanId,kind,cursor){if(resultInFlight)return;resultInFlight=true;try{const url='/dashboard/scans/'+scanId+'/results?kind='+encodeURIComponent(kind)+(cursor?'&cursor='+encodeURIComponent(cursor):'');const response=await fetch(url);if(response.status===401){showLogin();return;}if(!response.ok)throw new Error('results '+response.status);const payload=await response.json();if(lastSnapshot)resultsRevision=lastSnapshot.revision;const items=payload.items||[];
+  $('results').innerHTML=items.length?items.map(item=>{const d=item.data||{};const url=d.url||'';return '<div class="result"><div style="flex:1;min-width:0"><div class="nm">'+escapeHtml(d.name||d.template_id||item.event)+'</div><div class="u">'+escapeHtml(url)+'</div></div>'+(url?'<button type="button" class="pv" data-url="'+escapeHtml(url)+'">Xem trước</button>':'')+sevBadge(d.severity)+'</div>';}).join(''):'<div class="empty">Chưa có phát hiện nào.</div>';}
+  catch(error){$('error').textContent='Không tải được kết quả: '+error.message;}finally{resultInFlight=false;}}
+
+async function openPreview(url){const modal=$('previewModal');$('pvUrl').textContent=url;$('pvStatus').textContent='Đang tải…';$('pvBody').textContent='';previewBlob=null;if(!modal.open)modal.showModal();
+  try{const response=await fetch('/dashboard/preview?url='+encodeURIComponent(url));const payload=await response.json();if(!response.ok)throw new Error(payload.detail||(payload.error&&payload.error.message)||response.status);
+  $('pvUrl').textContent=payload.url;$('pvStatus').textContent='HTTP '+payload.status+', '+(payload.content_type||'')+', '+payload.bytes+' bytes'+(payload.truncated?' (đã cắt bớt)':'');$('pvBody').textContent=payload.body||'';previewBlob={body:payload.body||'',ct:payload.content_type||'text/plain'};}
+  catch(error){$('pvStatus').textContent='Không tải được nội dung';$('pvBody').textContent=String(error.message||error);}}
+function downloadBlob(text,type,name){const blob=new Blob([text],{type:type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+$('pvClose').addEventListener('click',()=>$('previewModal').close());
+$('pvDownload').addEventListener('click',()=>{if(previewBlob)downloadBlob(previewBlob.body,previewBlob.ct,'vts-preview.txt');});
+
+async function loadApprovals(scanId){if(approvalsInFlight||!scanId)return;approvalsInFlight=true;try{const response=await fetch('/dashboard/approvals?scan_id='+encodeURIComponent(scanId)+'&limit=50');if(response.status===401){showLogin();return;}if(!response.ok)throw new Error('approvals '+response.status);renderApprovals((await response.json()).items||[]);}catch(error){$('approvals').innerHTML='<div class="error">Không tải được danh sách duyệt: '+escapeHtml(error.message)+'</div>';}finally{approvalsInFlight=false;}}
+function renderApprovals(items){
+  const box=$('approvals');
+  if(!items.length){box.innerHTML='<div class="empty">Chưa có mục nào cần phê duyệt.</div>';return;}
+  const canAct=currentRole==='approver'||currentRole==='admin';
+  box.innerHTML=items.map(a=>{
+    const f=a.finding||{};
+    const resolved=['rejected','executed','execution_failed','timed_out'].indexOf(a.status)>=0;
+    let acts='';
+    if(a.status==='pending')acts=canAct?'<button type="button" class="act ok" data-id="'+escapeHtml(a.approval_id)+'" data-act="approve">Phê duyệt</button><button type="button" class="act no" data-id="'+escapeHtml(a.approval_id)+'" data-act="reject">Từ chối</button>':'<div class="need-role">Cần vai trò approver để quyết định.</div>';
+    else if(a.status==='approved')acts=canAct?'<button type="button" class="act run" data-id="'+escapeHtml(a.approval_id)+'" data-act="execute">Thực thi (dry-run)</button>':'<div class="need-role">Cần vai trò approver để thực thi.</div>';
+    return '<div class="appr'+(resolved?' resolved':'')+'"><div class="appr-top">'+(f.severity?sevBadge(f.severity):'')+
+      '<span class="appr-url">'+escapeHtml(f.url||'')+'</span><span class="appr-stat">'+escapeHtml(APPROVAL_LABEL[a.status]||a.status)+'</span></div>'+
+      '<div class="appr-id">'+escapeHtml(a.finding_id||a.approval_id)+'</div>'+(acts?'<div class="appr-acts">'+acts+'</div>':'')+'</div>';
+  }).join('');
+}
+async function approvalAction(id,action,btn){
+  const body={idempotency_key:crypto.randomUUID()};
+  if(action==='execute')body.dry_run=true;else body.reason='Quyết định qua bảng điều khiển';
+  if(btn)btn.disabled=true;
+  try{
+    const response=await fetch('/dashboard/approvals/'+id+'/'+action,{method:'POST',headers:{'content-type':'application/json',...CSRF},body:JSON.stringify(body)});
+    if(response.status!==200&&response.status!==202)throw new Error(await readError(response));
+    toast(action==='approve'?'Đã phê duyệt':action==='reject'?'Đã từ chối':'Đã yêu cầu thực thi (dry-run)');
+    if(currentScan){loadApprovals(currentScan);const d=await fetch('/dashboard/scans/'+currentScan);if(d.ok){lastRevision=0;applySnapshot(await d.json());}}
+  }catch(error){$('error').textContent='Thao tác duyệt thất bại: '+error.message;toast('Thao tác duyệt thất bại',true);if(btn)btn.disabled=false;}
+}
+$('approvals').addEventListener('click',event=>{const b=event.target.closest('button[data-act]');if(b)approvalAction(b.dataset.id,b.dataset.act,b);});
+
+async function refreshList(){if(listInFlight)return;listInFlight=true;try{const response=await fetch('/dashboard/scans?limit=20');if(response.status===401){showLogin();return;}if(!response.ok)throw new Error('list '+response.status);const payload=await response.json();if(!currentScan&&payload.items&&payload.items.length){currentScan=payload.items[0].scan_id;lastRevision=0;openScanStream(currentScan);}}catch(error){$('error').textContent='Không tải được danh sách: '+error.message;}finally{listInFlight=false;}}
+async function pollOnce(){if(!fallbackActive||!currentScan||detailInFlight)return;detailInFlight=true;try{const response=await fetch('/dashboard/scans/'+currentScan);if(response.status===401){fallbackActive=false;showLogin();return;}if(!response.ok)throw new Error('detail '+response.status);applySnapshot(await response.json());setConnectionState('polling');}catch(error){setConnectionState('offline');$('error').textContent='Mất cập nhật: '+error.message;}finally{detailInFlight=false;if(fallbackActive)pollTimer=setTimeout(pollOnce,2000);}}
+function startFallbackPolling(){if(fallbackActive)return;fallbackActive=true;setConnectionState('reconnecting');clearTimeout(pollTimer);pollTimer=setTimeout(pollOnce,1500);}
+function stopFallbackPollingAfterStableSse(){clearTimeout(sseStableTimer);sseStableTimer=setTimeout(()=>{if(eventSource&&eventSource.readyState===1){fallbackActive=false;clearTimeout(pollTimer);setConnectionState('live');}},10000);}
+function openScanStream(scanId){if(eventSource)eventSource.close();currentScan=scanId;lastRevision=0;setConnectionState('reconnecting');try{eventSource=new EventSource('/dashboard/scans/'+scanId+'/stream');eventSource.onopen=()=>{setConnectionState('live');stopFallbackPollingAfterStableSse();};const consume=event=>{try{applySnapshot(JSON.parse(event.data));}catch(error){$('error').textContent='Snapshot không hợp lệ';}};eventSource.addEventListener('snapshot',consume);eventSource.addEventListener('reset',consume);eventSource.addEventListener('error',()=>startFallbackPolling());eventSource.onerror=()=>startFallbackPolling();}catch(error){startFallbackPolling();}}
+
+$('scanForm').addEventListener('submit',async event=>{event.preventDefault();if(!launchIdempotencyKey)launchIdempotencyKey=crypto.randomUUID();const scanBtn=event.submitter;if(scanBtn)scanBtn.disabled=true;$('error').textContent='';try{const response=await fetch('/dashboard/scan',{method:'POST',headers:{'content-type':'application/json',...CSRF},body:JSON.stringify({target:$('target').value.trim(),mode:$('mode').value,exec_mode:$('execMode').value,idempotency_key:launchIdempotencyKey})});const payload=await response.json();if(!response.ok)throw new Error((payload.error&&payload.error.message)||payload.detail||response.status);currentScan=payload.scan_id;lastRevision=0;launchIdempotencyKey=null;$('results').innerHTML='<div class="empty">Chưa có phát hiện nào.</div>';$('approvals').innerHTML='<div class="empty">Chưa có mục nào cần phê duyệt.</div>';toast('Đã khởi chạy phiên quét');openScanStream(currentScan);}catch(error){$('error').textContent=error.message;}finally{if(scanBtn)scanBtn.disabled=false;}});
+$('reloadResults').addEventListener('click',()=>currentScan&&loadResultPage(currentScan,'findings',null));
+$('reloadApprovals').addEventListener('click',()=>currentScan&&loadApprovals(currentScan));
+$('results').addEventListener('click',event=>{const b=event.target.closest('.pv');if(b)openPreview(b.dataset.url);});
+
+/* ---------- history ---------- */
+function sevChips(counts){const c=counts||{};const parts=SEVERITIES.filter(s=>(c[s]||0)>0).map(s=>'<span class="sev '+s+'" title="'+escapeHtml(SEV_LABEL[s])+'">'+escapeHtml(SEV_LABEL[s])+' '+(c[s]||0)+'</span>');return parts.length?'<div class="sevs">'+parts.join('')+'</div>':'<span class="hint">Không có</span>';}
+function statusPill(status){return '<span class="pill '+escapeHtml(status)+'">'+escapeHtml(SCAN_LABEL[status]||status)+'</span>';}
+function renderHistoryRows(payload){
+  const items=(payload&&payload.items)||[];const total=(payload&&payload.total)||0;const offset=(payload&&payload.offset)||0;const limit=(payload&&payload.limit)||historyState.limit;
+  $('historyRows').innerHTML=items.length?items.map(h=>'<tr data-id="'+escapeHtml(h.scan_id)+'" tabindex="0" aria-label="Xem chi tiết phiên quét '+escapeHtml(h.target)+'">'+
+    '<td class="nowrap">'+escapeHtml(fmtTime(h.completed_at||h.created_at))+'</td>'+
+    '<td class="mono nowrap">'+escapeHtml(h.target)+'</td>'+
+    '<td>'+escapeHtml(MODE_LABEL[h.mode]||h.mode)+'</td>'+
+    '<td>'+statusPill(h.status)+'</td>'+
+    '<td>'+sevChips(h.findings_by_severity)+'</td>'+
+    '<td class="num">'+escapeHtml((h.summary||{}).assets||0)+'</td>'+
+    '<td class="num">'+escapeHtml((h.summary||{}).verified||0)+'</td>'+
+    '<td class="num">'+escapeHtml(fmtDuration(h.duration_seconds))+'</td>'+
+    '<td>'+escapeHtml(h.actor||'-')+'</td></tr>').join(''):
+    '<tr><td colspan="9" class="empty">'+((historyState.status||historyState.target)?'Không có lần kiểm tra nào khớp bộ lọc.':'Chưa có lần kiểm tra nào kết thúc. Hãy chạy một phiên quét ở mục Phiên quét.')+'</td></tr>';
+  const from=items.length?offset+1:0;const to=offset+items.length;
+  $('historyCount').textContent=total?('Hiển thị '+from+' đến '+to+' trên '+total+' lần kiểm tra'):'0 lần kiểm tra';
+  $('hPrev').disabled=offset<=0;$('hNext').disabled=to>=total;
+}
+async function loadHistory(){if(historyInFlight)return;historyInFlight=true;$('historyError').textContent='';try{
+  const q=new URLSearchParams({limit:historyState.limit,offset:historyState.offset});if(historyState.status)q.set('status',historyState.status);if(historyState.target)q.set('target',historyState.target);
+  const response=await fetch('/dashboard/history?'+q.toString());if(response.status===401){showLogin();return;}if(!response.ok)throw new Error(await readError(response));renderHistoryRows(await response.json());}
+  catch(error){$('historyError').textContent='Không tải được lịch sử: '+error.message;}finally{historyInFlight=false;}}
+$('historyFilters').addEventListener('submit',e=>{e.preventDefault();historyState.target=$('hTarget').value.trim();historyState.status=$('hStatus').value;historyState.offset=0;loadHistory();});
+$('hReload').addEventListener('click',loadHistory);
+$('hPrev').addEventListener('click',()=>{historyState.offset=Math.max(0,historyState.offset-historyState.limit);loadHistory();});
+$('hNext').addEventListener('click',()=>{historyState.offset+=historyState.limit;loadHistory();});
+function renderHistoryDetail(d){
+  historyDetail=d;$('hdTitle').textContent=d.target;$('hdId').textContent=d.scan_id;$('hdStatus').innerHTML=statusPill(d.status);
+  const s=d.summary||{};const ap=d.approvals||{};
+  const stages=Object.keys(d.stages||{}).map(n=>{const st=d.stages[n];return '<tr><th scope="row">'+escapeHtml({recon:'Thu thập',scan:'Dò lỗ hổng',verification:'Xác minh và duyệt'}[n]||n)+'</th><td>'+escapeHtml(STAGE_LABEL[st.status]||st.status)+'</td><td class="num">'+escapeHtml(st.total_work)+'</td><td class="num">'+escapeHtml(st.failed_work)+'</td><td class="num">'+escapeHtml(st.result_count)+'</td></tr>';}).join('');
+  const findings=(d.findings||[]);
+  $('hdBody').innerHTML=
+   '<dl class="kv">'+[['Bắt đầu',fmtTime(d.created_at)],['Hoàn tất',fmtTime(d.completed_at)],['Thời lượng',fmtDuration(d.duration_seconds)],['Chế độ',(MODE_LABEL[d.mode]||d.mode)+(d.exec_mode?', '+(d.exec_mode==='parallel'?'song song':'lần lượt'):'')],['Người chạy',d.actor||'-'],['Mã kết quả',d.outcome_code||'-'],['Tài sản',s.assets||0],['Phát hiện',s.findings||0],['Đã xác minh',s.verified||0],['Phê duyệt',(ap.total||0)+' (đã thực thi '+(ap.executed||0)+', từ chối '+(ap.rejected||0)+', lỗi '+(ap.failed||0)+')']].map(r=>'<div><dt>'+escapeHtml(r[0])+'</dt><dd>'+escapeHtml(r[1])+'</dd></div>').join('')+'</dl>'+
+   '<div><h2 style="margin-bottom:8px">Các giai đoạn</h2><div class="table-wrap"><table><thead><tr><th scope="col">Giai đoạn</th><th scope="col">Trạng thái</th><th scope="col" class="num">Work</th><th scope="col" class="num">Lỗi</th><th scope="col" class="num">Kết quả</th></tr></thead><tbody>'+stages+'</tbody></table></div></div>'+
+   '<div><h2 style="margin-bottom:8px">Phát hiện ('+findings.length+')</h2>'+(findings.length?'<div class="table-wrap"><table><thead><tr><th scope="col">Mức độ</th><th scope="col">Template</th><th scope="col">Tên</th><th scope="col">URL</th></tr></thead><tbody>'+findings.map(f=>'<tr><td>'+sevBadge(f.severity)+'</td><td class="mono">'+escapeHtml(f.template_id||'-')+'</td><td>'+escapeHtml(f.name||'-')+'</td><td class="mono" style="word-break:break-all">'+escapeHtml(f.url||'-')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Lần kiểm tra này không ghi nhận phát hiện nào.</div>')+'</div>';
+}
+async function openHistoryDetail(id){const dlg=$('historyDialog');$('hdTitle').textContent='Đang tải…';$('hdId').textContent=id;$('hdStatus').innerHTML='';$('hdBody').innerHTML='<div class="empty">Đang tải chi tiết…</div>';historyDetail=null;if(!dlg.open)dlg.showModal();
+  try{const response=await fetch('/dashboard/history/'+encodeURIComponent(id));if(!response.ok)throw new Error(await readError(response));renderHistoryDetail(await response.json());}
+  catch(error){$('hdTitle').textContent='Không tải được chi tiết';$('hdBody').innerHTML='<div class="error">'+escapeHtml(error.message)+'</div>';}}
+$('historyRows').addEventListener('click',e=>{const tr=e.target.closest('tr[data-id]');if(tr)openHistoryDetail(tr.dataset.id);});
+$('historyRows').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const tr=e.target.closest('tr[data-id]');if(tr){e.preventDefault();openHistoryDetail(tr.dataset.id);}}});
+$('hdClose').addEventListener('click',()=>$('historyDialog').close());
+function csvCell(v){let s=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
+function historyCsv(d){const rows=[['Mức độ','Template','Tên','URL']].concat((d.findings||[]).map(f=>[f.severity,f.template_id,f.name,f.url]));return rows.map(r=>r.map(csvCell).join(',')).join('\r\n');}
+$('hdCsv').addEventListener('click',()=>{if(historyDetail)downloadBlob('﻿'+historyCsv(historyDetail),'text/csv;charset=utf-8','phat-hien-'+historyDetail.scan_id+'.csv');});
+$('hdJson').addEventListener('click',()=>{if(historyDetail)downloadBlob(JSON.stringify(historyDetail,null,2),'application/json','lich-su-'+historyDetail.scan_id+'.json');});
+
+/* ---------- scope (approver: read, admin: read + write) ---------- */
+function renderScope(items){const admin=currentRole==='admin';
+  $('scopeRows').innerHTML=items.length?items.map(s=>'<tr><td class="mono">'+escapeHtml(s.target)+'</td><td>'+escapeHtml(s.type)+'</td><td>'+escapeHtml(s.note||'')+'</td>'+(admin?'<td class="num"><button type="button" class="act no" data-id="'+escapeHtml(s.id)+'" data-target="'+escapeHtml(s.target)+'" aria-label="Xóa '+escapeHtml(s.target)+' khỏi phạm vi">Xóa</button></td>':'')+'</tr>').join(''):'<tr><td colspan="'+(admin?4:3)+'" class="empty">Phạm vi đang trống. Hệ thống sẽ từ chối mọi mục tiêu cho đến khi admin thêm vào.</td></tr>';
+  $('scopeActionHead').hidden=!admin;}
+async function loadScope(){if(!canSee('scope',currentRole))return;try{const response=await fetch('/dashboard/scope');if(response.status===401){showLogin();return;}if(!response.ok)throw new Error(await readError(response));renderScope((await response.json()).items||[]);}catch(error){$('scopeRows').innerHTML='<tr><td colspan="4" class="error">Không tải được phạm vi: '+escapeHtml(error.message)+'</td></tr>';}}
+async function addScope(){const target=$('scopeTarget').value.trim();if(!target)return;if(!$('scopeAuth').checked){$('scopeError').textContent='Hãy xác nhận bạn được phép kiểm thử mục tiêu này.';return;}$('scopeError').textContent='';try{const response=await fetch('/dashboard/scope',{method:'POST',headers:{'content-type':'application/json',...CSRF},body:JSON.stringify({target:target,type:$('scopeType').value,authorized:true})});if(!response.ok)throw new Error(await readError(response));$('scopeTarget').value='';$('scopeAuth').checked=false;toast('Đã thêm vào phạm vi');loadScope();}catch(error){$('scopeError').textContent='Không thêm được: '+error.message;}}
+function confirmDialog(title,text,yesLabel){return new Promise(resolve=>{const dlg=$('confirmDialog');$('cfTitle').textContent=title;$('cfText').textContent=text;$('cfYes').textContent=yesLabel||'Xóa';
+  const done=v=>{dlg.close();$('cfYes').onclick=null;$('cfNo').onclick=null;dlg.onclose=null;resolve(v);};
+  $('cfYes').onclick=()=>done(true);$('cfNo').onclick=()=>done(false);dlg.onclose=()=>resolve(false);dlg.showModal();});}
+async function delScope(id,target){if(!await confirmDialog('Xóa khỏi phạm vi','Mục tiêu "'+target+'" sẽ không còn được phép kiểm thử. Các phiên quét mới nhắm vào mục tiêu này sẽ bị từ chối.'))return;
+  try{const response=await fetch('/dashboard/scope/'+encodeURIComponent(id),{method:'DELETE',headers:CSRF});if(!response.ok)throw new Error(await readError(response));toast('Đã xóa khỏi phạm vi');loadScope();}catch(error){$('scopeError').textContent='Không xóa được: '+error.message;}}
+$('scopeRows').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(b)delScope(b.dataset.id,b.dataset.target);});
+$('reloadScope').addEventListener('click',loadScope);$('scopeAddBtn').addEventListener('click',addScope);
+
+/* ---------- templates (admin only) ---------- */
+function renderTemplates(items){
+  $('templateRows').innerHTML=items.length?items.map(t=>{const p=t.parsed||{};const info=p.info||{};return '<tr><td class="mono">'+escapeHtml(t.id)+'</td><td>'+escapeHtml(info.name||'-')+'</td><td>'+sevBadge(info.severity||'info')+'</td><td class="num"><button type="button" class="act no" data-id="'+escapeHtml(t.id)+'" aria-label="Xóa template '+escapeHtml(t.id)+'">Xóa</button></td></tr>';}).join(''):'<tr><td colspan="4" class="empty">Chưa có template nào do bạn thêm. Dùng khung bên cạnh để thêm template đầu tiên.</td></tr>';}
+async function loadTemplates(){if(!canSee('templates',currentRole))return;try{const response=await fetch('/dashboard/templates');if(response.status===401){showLogin();return;}if(!response.ok)throw new Error(await readError(response));renderTemplates((await response.json()).items||[]);}catch(error){$('templateRows').innerHTML='<tr><td colspan="4" class="error">Không tải được template: '+escapeHtml(error.message)+'</td></tr>';}}
+function showTemplateResult(ok,title,errors){const box=$('tplResult');box.hidden=false;box.className='validation '+(ok?'ok':'bad');box.innerHTML='<strong>'+escapeHtml(title)+'</strong>'+((errors&&errors.length)?'<ul>'+errors.map(e=>'<li>'+escapeHtml(e)+'</li>').join('')+'</ul>':'');}
+function templateErrors(payload){const d=payload&&payload.detail;if(d&&d.validation_errors)return d.validation_errors;if(payload&&payload.errors)return payload.errors;if(typeof d==='string')return [d];if(payload&&payload.error&&payload.error.message)return [payload.error.message];return [];}
+async function validateTemplate(){const body=$('tplBody').value;if(!body.trim()){showTemplateResult(false,'Chưa có nội dung để kiểm tra',[]);return false;}
+  try{const response=await fetch('/dashboard/templates/validate',{method:'POST',headers:{'content-type':'application/json',...CSRF},body:JSON.stringify({yaml_body:body})});const payload=await response.json().catch(()=>({}));
+  if(!response.ok){showTemplateResult(false,'Không kiểm tra được',templateErrors(payload));return false;}
+  if(payload.valid){showTemplateResult(true,'Template hợp lệ và an toàn để lưu',[]);return true;}showTemplateResult(false,'Template chưa hợp lệ',payload.errors||[]);return false;}
+  catch(error){showTemplateResult(false,'Không kiểm tra được',[error.message]);return false;}}
+async function saveTemplate(){const saveBtn=$('tplSave');if(saveBtn.disabled)return;saveBtn.disabled=true;try{if(!await validateTemplate())return;
+  try{const response=await fetch('/dashboard/templates',{method:'POST',headers:{'content-type':'application/json',...CSRF},body:JSON.stringify({yaml_body:$('tplBody').value})});const payload=await response.json().catch(()=>({}));
+  if(!response.ok){showTemplateResult(false,'Không lưu được template',templateErrors(payload));return;}
+  toast('Đã lưu template '+payload.id);$('tplBody').value='';$('tplResult').hidden=true;loadTemplates();}
+  catch(error){showTemplateResult(false,'Không lưu được template',[error.message]);}}finally{saveBtn.disabled=false;}}
+async function deleteTemplate(id){if(!await confirmDialog('Xóa template','Template "'+id+'" sẽ không còn được dùng trong các phiên quét sau.'))return;
+  try{const response=await fetch('/dashboard/templates/'+encodeURIComponent(id),{method:'DELETE',headers:CSRF});if(!response.ok)throw new Error(await readError(response));toast('Đã xóa template '+id);loadTemplates();}catch(error){toast('Không xóa được: '+error.message,true);}}
+$('templateRows').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(b)deleteTemplate(b.dataset.id);});
+$('tplValidate').addEventListener('click',validateTemplate);$('tplSave').addEventListener('click',saveTemplate);
+$('tplSample').addEventListener('click',()=>{$('tplBody').value=TEMPLATE_SAMPLE;$('tplResult').hidden=true;$('tplBody').focus();});
+$('reloadTemplates').addEventListener('click',loadTemplates);
+window.addEventListener('beforeunload',e=>{if($('tplBody').value.trim()){e.preventDefault();e.returnValue='';}});
+
+/* ---------- auth ---------- */
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();const box=$('loginError');const loginBtn=event.submitter;if(loginBtn)loginBtn.disabled=true;box.textContent='';try{const response=await fetch('/dashboard/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),password:$('password').value})});const payload=await response.json();if(!response.ok)throw new Error((payload.error&&payload.error.message)||response.status);$('password').value='';checkSession();}catch(error){box.textContent=error.message;}finally{if(loginBtn)loginBtn.disabled=false;}});
+$('logoutButton').addEventListener('click',async()=>{await fetch('/dashboard/logout',{method:'POST',headers:CSRF});currentScan=null;lastRevision=0;try{history.replaceState(null,'',location.pathname);}catch(e){}showLogin();});
+setConnectionState('reconnecting');checkSession();
+</script>
+</body></html>

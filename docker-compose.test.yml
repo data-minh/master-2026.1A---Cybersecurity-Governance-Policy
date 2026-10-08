@@ -1,0 +1,33 @@
+# Isolated lifecycle test overlay. Always combine with docker-compose.yml and
+# an explicit Compose project name, for example: -p vts-lifecycle-test.
+services:
+  redis:
+    container_name: vts-lifecycle-test-redis
+  gateway:
+    container_name: vts-lifecycle-test-gateway
+  scope-auth:
+    container_name: vts-lifecycle-test-scope-auth
+  orchestrator:
+    container_name: vts-lifecycle-test-orchestrator
+  dashboard:
+    container_name: vts-lifecycle-test-dashboard
+  recon-subdomain:
+    container_name: vts-lifecycle-test-recon-subdomain
+    environment:
+      RECON_EXTERNAL_SOURCES_ENABLED: "false"
+  recon-httpprobe:
+    container_name: vts-lifecycle-test-recon-httpprobe
+    environment:
+      RECON_EXTERNAL_SOURCES_ENABLED: "false"
+  recon-portfuzz:
+    container_name: vts-lifecycle-test-recon-portfuzz
+  scan-engine:
+    container_name: vts-lifecycle-test-scan-engine
+  scan-specialized:
+    container_name: vts-lifecycle-test-scan-specialized
+  verification:
+    container_name: vts-lifecycle-test-verification
+    environment:
+      DRY_RUN: "true"
+  vuln-target:
+    container_name: vts-lifecycle-test-vuln-target

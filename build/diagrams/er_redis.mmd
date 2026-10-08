@@ -1,0 +1,56 @@
+erDiagram
+  SCAN ||--o{ STAGE : "có 3"
+  SCAN ||--o{ WORK : "chứa"
+  STAGE ||--o{ WORK : "sở hữu"
+  WORK ||--o{ RESULT : "sinh ra"
+  WORK ||--o{ WORK : "parent_work_id"
+  SCAN ||--o{ APPROVAL : "có"
+  APPROVAL ||--|| WORK : "execution_work_id"
+  SCAN ||--o{ SNAPSHOT_UPDATE : "stream SSE"
+
+  SCAN {
+    string scan_id PK
+    int revision
+    string status
+    string target
+    string mode
+    string exec_mode
+    datetime created_at
+    datetime completed_at
+  }
+  STAGE {
+    string stage_run_id PK
+    string name
+    string status
+    bool sealed
+    int total_work
+    int open_work
+    int result_count
+  }
+  WORK {
+    string work_id PK
+    string work_type
+    string service
+    string status
+    int attempt
+    int max_attempts
+    string dispatch_state
+  }
+  RESULT {
+    string result_id PK
+    string kind
+    string event
+    json data
+  }
+  APPROVAL {
+    string approval_id PK
+    string finding_id
+    string status
+    datetime decision_deadline
+    string actor
+  }
+  SNAPSHOT_UPDATE {
+    string stream_id PK
+    int revision
+    json snapshot
+  }

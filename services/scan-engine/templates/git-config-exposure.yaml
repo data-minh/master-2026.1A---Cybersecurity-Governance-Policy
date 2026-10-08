@@ -1,0 +1,22 @@
+id: git-config-exposure
+info:
+  name: Exposed .git/config
+  severity: medium
+  description: Detects a publicly accessible .git/config file which can leak source and secrets.
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.git/config"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: word
+        part: body
+        words: ["[core]", "repositoryformatversion"]
+        condition: and
+    extractors:
+      - type: regex
+        part: body
+        regex: ["url = (.+)"]
+        group: 1

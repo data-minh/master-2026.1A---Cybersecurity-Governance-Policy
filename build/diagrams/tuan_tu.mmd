@@ -1,0 +1,47 @@
+sequenceDiagram
+  autonumber
+  actor OP as Operator
+  actor AP as Approver
+  participant UI as Dashboard
+  participant OR as Orchestrator
+  participant SC as Scope-Auth
+  participant RD as Redis
+  participant WK as Worker Recon/Scan
+  participant VF as Verification
+  participant TG as vuln-target
+
+  OP->>UI: POST /dashboard/scan + CSRF
+  UI->>OR: POST /scans (JWT, Idempotency-Key)
+  OR->>SC: GET /scope/check
+  SC-->>OR: allowed=true
+  OR->>RD: MULTI: snapshot, work gốc, XADD lệnh Recon
+  OR-->>UI: 201 snapshot (revision 2)
+  UI-->>OP: mở SSE /stream
+
+  WK->>RD: XREADGROUP lệnh, lease, work.started
+  WK->>SC: scope/check từng host
+  WK->>TG: DNS, HTTP probe (kiểm scope từng hop)
+  WK->>RD: asset.*, work.completed + journal, XACK
+  RD-->>OR: vts.bus
+  OR->>RD: CAS ingest + fan-out work Scan
+  OR-->>UI: SSE snapshot (revision tăng)
+
+  WK->>TG: GET path của template (kiểm scope)
+  WK->>RD: vuln.detected, work.completed
+  OR->>RD: fan-out: high/critical thành work safe_verify
+
+  VF->>TG: GET an toàn, không payload
+  VF->>RD: vuln.verified, approval.requested
+  OR->>RD: scan awaiting_approval, work execute bị khóa
+  OR-->>UI: SSE awaiting_approval
+
+  AP->>UI: approve (Idempotency-Key)
+  UI->>VF: POST /approvals/id/approve (JWT approver)
+  VF->>RD: CAS pending thành approved
+  Note over VF: execute trước approve trả 409
+  AP->>UI: execute (dry-run)
+  VF->>RD: CAS approved thành executing
+  OR->>RD: mở khóa work execute
+  VF->>RD: approval.executed, work.completed
+  OR->>RD: mọi stage sealed, approval resolved: scan succeeded
+  OR-->>UI: SSE succeeded (snapshot cuối bất biến)

@@ -1,0 +1,22 @@
+flowchart TD
+  A([Bắt đầu: nhập target]) --> B{Target trong scope?}
+  B -- Không --> B1[403 SCOPE_DENIED] --> Z([Kết thúc])
+  B -- Có --> C[Tạo scan: queued → running, đăng ký work gốc]
+  C --> D[Recon: subdomain, OSINT]
+  D --> E[Với mỗi host: HTTP probe, port scan]
+  E --> F[Với mỗi endpoint/URL page: content fuzz, đăng ký work Scan]
+  F --> G[Scan: template engine + specialized]
+  G --> H{Có finding high/critical?}
+  H -- Không --> N
+  H -- Có --> I[Safe-verify: GET không phá hủy]
+  I --> J[Tạo approval pending ⇒ scan awaiting_approval]
+  J --> K{Quyết định của người có quyền}
+  K -- Reject --> L[Hủy work execute - coi là resolved]
+  K -- Approve --> M[Execute dry-run theo yêu cầu riêng]
+  K -- Quá hạn --> T[Scan timed_out] --> Z
+  L --> N
+  M --> N{Mọi stage sealed và hết work mở và approval resolved?}
+  N -- Không --> G2[Chờ work còn lại] --> N
+  N -- Có --> O[Scan succeeded]
+  O --> Z
+  E -. work lỗi, hết 3 lần retry .-> X[Stage failed ⇒ scan failed, hủy work còn mở] --> Z

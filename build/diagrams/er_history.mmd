@@ -1,0 +1,33 @@
+erDiagram
+  SCAN_HISTORY ||--o{ SCAN_FINDING : "có"
+  SCAN_HISTORY {
+    text scan_id PK
+    text target
+    text mode
+    text exec_mode
+    text status
+    text outcome_code
+    text actor
+    text created_at
+    text completed_at
+    int duration_seconds
+    int assets
+    int findings
+    int verified
+    int critical
+    int high
+    int medium
+    int low
+    int info
+    text approvals_json
+    text stages_json
+    text archived_at
+  }
+  SCAN_FINDING {
+    int id PK
+    text scan_id FK
+    text template_id
+    text name
+    text severity
+    text url
+  }

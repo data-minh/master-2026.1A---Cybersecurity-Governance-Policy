@@ -1,0 +1,21 @@
+id: directory-listing
+info:
+  name: Directory Listing Enabled
+  severity: low
+  description: Detects Apache/Nginx autoindex directory listing which may expose files.
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/uploads/"
+      - "{{BaseURL}}/files/"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: word
+        part: body
+        words:
+          - "Index of /"
+          - "<title>Directory listing for"
+        condition: or

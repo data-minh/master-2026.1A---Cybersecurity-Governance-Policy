@@ -1,0 +1,29 @@
+flowchart LR
+  OP((Operator))
+  AP((Approver))
+  AD((Admin))
+  SYS((Hệ thống tự động))
+
+  subgraph VTS[Hệ thống VTS]
+    UC1[UC1 Đăng nhập]
+    UC2[UC2 Quản lý scope]
+    UC3[UC3 Khởi chạy phiên quét]
+    UC4[UC4 Theo dõi tiến độ - dashboard]
+    UC5[UC5 Xem phát hiện và xem trước bằng chứng]
+    UC6[UC6 Phê duyệt và thực thi có kiểm soát]
+    UC7[UC7 Quản lý template]
+    UC8[UC8 Hủy phiên quét]
+    UC9[UC9 Thu thập tài sản Recon]
+    UC10[UC10 Dò lỗ hổng Scan]
+    UC11[UC11 Xác minh an toàn]
+  end
+
+  OP --> UC1 & UC3 & UC4 & UC5 & UC7 & UC8
+  AP --> UC1 & UC4 & UC6
+  AD --> UC1 & UC2 & UC7
+  SYS --> UC9 & UC10 & UC11
+  UC3 -.include.-> UC9
+  UC9 -.dẫn tới.-> UC10
+  UC10 -.dẫn tới.-> UC11
+  UC11 -.dẫn tới.-> UC6
+  UC3 -.include.-> UC2
