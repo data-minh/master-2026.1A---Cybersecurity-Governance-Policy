@@ -151,8 +151,14 @@ services:
     ports: ["${VTS_BIND_ADDRESS:-127.0.0.1}:${VERIFICATION_HOST_PORT:-8023}:8000"]
 
   # ---------------- Demo-only intentionally vulnerable target ----------------
+  # DÙNG ĐỂ TEST/DEMO: website giả (Lumière Eyewear) cố ý có lỗ hổng (.env, .git/config,
+  # phpinfo, actuator, reflected XSS) để VTS có cái để quét ngay trong mạng nội bộ.
+  # Đã nằm sẵn trong scope (scope-auth, rule `vuln-target`). KHÔNG dùng ngoài lab.
+  # Chỉ khởi động khi bật profile demo:
+  #   docker compose --profile demo up -d --build
+  # Mở thử trên trình duyệt: http://127.0.0.1:8090 ; khi quét, nhập mục tiêu `vuln-target`.
   vuln-target:
-    profiles: ["demo"]
+    # profiles: ["demo"]
     build: { context: ., dockerfile: services/vuln-target/Dockerfile }
     image: vts/vuln-target:1.0.0
     container_name: vts-vuln-target
